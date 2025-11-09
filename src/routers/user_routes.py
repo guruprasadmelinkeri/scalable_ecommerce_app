@@ -18,4 +18,5 @@ def login(request:Request,email:str,password,db:Session=Depends(get_db)):
 @router.put("/login/test")
 def test_login(request:Request,db:Session=Depends(get_db)):
     
-    return get_current_user(db,request)
+    user=get_current_user(db,request)
+    return user.email
