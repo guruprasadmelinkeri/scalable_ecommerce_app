@@ -1,12 +1,10 @@
-
-from re import S
 from fastapi import FastAPI,Depends,APIRouter, HTTPException,Request
 from requests import Session
 from database import SessionLocal,get_db
 from utils.helper_functions import create_user,login_user
-from schema.schema import CreateUser,CategoryBase,CategoryUpdate
+from schema.schema import CreateUser,CategoryBase,CategoryUpdate,ProductCreate,ProductUpdate
 from utils.helper_functions import get_current_user
-from models.product_model import Category
+from models.product_model import Category, Product
 router =APIRouter()
 
 @router.post("/category")
@@ -16,7 +14,7 @@ def create_category(request:Request,category:CategoryBase,db:Session=Depends(get
         raise HTTPException(status_code=400,detail="Category name exists")
     new_category=Category(
         name=category.name,
-        description=category.description
+        description=category.description,
 
     )
 
@@ -58,4 +56,59 @@ def delete_category(request:Request,id:int,db:Session=Depends(get_db)):
     db.commit()
     return category
 
+## product routers 
+@router.put("/product")
+def create_product(request:Request,product:ProductCreate,db:Session=Depends(get_db)):
+    check=db.query(Product).filter(Product.name==product.name).first()
+    if check:
+        raise HTTPException(status_code=404,detail="name aldready exists")
+    new_product=Product(
+        name=product.name,
+        category_id=product.category_id,
+        description=product.description,
+        stock=product.stock,
+        price=product.price,
+        image_url=product.image_url
+    )
+    db.add(new_product)
+    db.commit()
+    return product
 
+@router.get("/product")
+def get_all_products(request:Request,db:Session=Depends(get_db)):
+    products=db.query(Product).all()
+    return products
+                     
+@router.get("/product/{id}")
+def get_product_by_id(request:Request,id:int,db:Session=Depends(get_db)):
+    ls=db.query(Product).filter(Product.id==id).first()
+    if(not ls):
+        raise HTTPException(status_code=400,detail="product not found")
+    return ls
+
+@router.put("/product/{id}")
+def update_product(request:Request,update:ProductUpdate,id:int,db:Session=Depends(get_db)):
+    product=db.query(Product).filter(Product.id==id).first()
+
+    if not product:
+        raise HTTPException(status_code=400,detail="product not found")
+
+    
+    if update.stock:
+        product.stock=update.stock
+    if update.price:
+        product.price=update.price
+
+
+    db.add(product)
+    db.commit()
+    return { "name":product.name}
+
+@router.delete("/product/{id}")
+def delete_product(request:Request,id:int,db:Session=Depends(get_db)):
+    product=db.query(Product).filter(Product.id==id).first()
+    if not product:
+        raise HTTPException(status_code=404,detail="Product Not Found")
+    db.delete(product)
+    db.commit()
+    return product
