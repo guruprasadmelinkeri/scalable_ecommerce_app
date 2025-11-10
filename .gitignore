@@ -15,5 +15,6 @@ venv/
 .idea/
 .DS_Store
 *.log
+test.db
 # Alembic migrations cache
 migrations/

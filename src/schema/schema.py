@@ -23,7 +23,7 @@ class CartItemRead(CartItemBase):
     product_id:int
     price_at_addition:float
     quantity:int
-    subtotal=float
+    subtotal:float
 
     class Config:
         orm_mode = True
@@ -37,7 +37,7 @@ class CartItemUpdate(CartItemBase):
 class CartRead(BaseModel):
     id:int
     user_id:int
-    items=List[CartItemRead]
+    items:List[CartItemRead]
     total:float
 
     class Config:
@@ -54,6 +54,8 @@ class CategoryRead(CategoryBase):
 
     class Config:
         orm_mode=True
+class CategoryUpdate(CategoryBase):
+    description:Optional[str]=None
 
 class ProductBase(BaseModel):
     name:str

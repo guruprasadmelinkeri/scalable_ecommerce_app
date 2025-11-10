@@ -3,14 +3,16 @@ from requests import session
 from auth.create_tokens import SECRET_KEY
 from database import Base,engine
 from routers.user_routes import router as user_router
+from routers.product_routes import router as product_router
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 import os
 
 
+
 app=FastAPI()
 app.include_router(user_router)
-
+app.include_router(product_router)
 app.add_middleware(SessionMiddleware,
     secret_key=SECRET_KEY,
     session_cookie="session",
