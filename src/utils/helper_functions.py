@@ -1,12 +1,12 @@
 import datetime
-from signal import raise_signal
 from requests import session
 from auth.create_tokens import create_access_token,create_refresh_token
 from database import SessionLocal
 from auth.auth import hash,verify
+from models.product_model import Product
 from models.user_model import RefreshToken, User
-from models.cart_model import Cart
-from schema.schema import CreateUser
+from models.cart_model import Cart, CartItem
+from schema.schema import CartItemCreate, CreateUser
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,Request
 from datetime import datetime,timedelta
@@ -154,3 +154,39 @@ def get_user_cart(request:Request,user:User,db:Session):
         db.commit()
         db.refresh(cart)
     return cart
+
+## add cartitems to cart
+
+def add_cartitems(request:Request,user:User,product:CartItemCreate,db:Session):
+    cart=get_user_cart(request,user,db)
+    new_product=db.query(Product).filter(Product.id==product.product_id).first()
+    
+    if ( not new_product):
+        raise HTTPException(status_code=400,detail="Product not found")
+    
+    cart_item=db.query(CartItem).filter(CartItem.cart_id==cart.id,
+                                       CartItem.product_id==new_product.id).first()
+    
+    if not cart_item:
+        cart_item=CartItem(
+            cart_id=cart.id,
+            product_id=new_product.id,
+            quantity=product.quantity,
+            price_at_addition=new_product.price,
+        )
+
+    quantity=cart_item.quantity
+    delta=product.quantity
+    quantity+=delta
+    cart_item.quantity=quantity
+    cart_item.price_at_addition=new_product.price
+
+    db.add(cart_item)
+    db.commit()
+    db.refresh(cart_item)
+
+    db.add(cart)
+    db.commit()
+    db.refresh(cart)
+    return cart.items
+    
