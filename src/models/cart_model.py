@@ -12,7 +12,7 @@ class Cart(Base):
     user = relationship("User", back_populates="cart")
     items = relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
     def total_cost(self):
-        return sum(items.subtotal() for items in self.items)
+        return sum(item.subtotal() for item in self.items) if self.items else 0   
     
 class CartItem(Base):
     __tablename__ = "cart_items"
@@ -27,3 +27,5 @@ class CartItem(Base):
 
     def subtotal(self):
         return self.quantity * self.price_at_addition
+
+

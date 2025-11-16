@@ -4,7 +4,7 @@ from requests import Session
 from database import SessionLocal,get_db
 from utils.helper_functions import create_user,login_user
 from schema.schema import CreateUser
-from utils.helper_functions import get_current_user
+from utils.helper_functions import get_current_user,get_all_users
 
 router =APIRouter()
 
@@ -20,3 +20,9 @@ def test_login(request:Request,db:Session=Depends(get_db)):
     
     user=get_current_user(db,request)
     return user.email
+
+@router.get("/users")
+def get_users(request:Request,db:Session=Depends(get_db)):
+    users= get_all_users(request,db)
+
+    return ((user.id for user in users) if users else [])

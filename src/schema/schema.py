@@ -9,6 +9,51 @@ class CreateUser(BaseModel):
     password:str
     email:str
 
+## product schemas 
+
+class CategoryBase(BaseModel):
+    name:str
+    description:Optional[str]=None
+
+class CategoryRead(CategoryBase):
+    id:int
+
+    class Config:
+        orm_mode=True
+
+
+        
+class CategoryUpdate(CategoryBase):
+    description:Optional[str]=None
+
+class ProductBase(BaseModel):
+    name:str
+    description:Optional[str]=None
+    price:float
+    stock:int
+    category_id:Optional[int]=None
+    image_url:Optional[str]=None
+
+
+class ProductCreate(ProductBase):
+    pass 
+class ProductUpdate(BaseModel):
+    stock:Optional[int]=None
+    price:Optional[int]=None
+     
+
+class ProductRead(ProductBase):
+    id:int
+    
+    category:Optional[CategoryRead]
+
+    class Config:
+        orm_mode:True
+
+
+
+
+
 
 ## cartitem schemas
 class CartItemBase(BaseModel):
@@ -20,6 +65,7 @@ class CartItemCreate(CartItemBase):
 
 class CartItemRead(CartItemBase):
     id:int
+    product:ProductRead
     product_id:int
     price_at_addition:float
     quantity:int
@@ -43,39 +89,6 @@ class CartRead(BaseModel):
     class Config:
         orm_mode = True
 
-## product schemas 
-
-class CategoryBase(BaseModel):
-    name:str
-    description:Optional[str]=None
-
-class CategoryRead(CategoryBase):
-    id:int
-
-    class Config:
-        orm_mode=True
-class CategoryUpdate(CategoryBase):
-    description:Optional[str]=None
-
-class ProductBase(BaseModel):
-    name:str
-    description:Optional[str]=None
-    price:float
-    stock:int
-    category_id:Optional[int]=None
-    image_url:Optional[str]=None
-
-
-class ProductCreate(ProductBase):
-    pass 
-
-class ProductRead(ProductBase):
-    id:int
-    is_active:bool 
-    category:Optional[CategoryRead]
-
-    class Config:
-        orm_read:True
 
 
 

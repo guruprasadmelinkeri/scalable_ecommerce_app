@@ -5,6 +5,7 @@ from auth.create_tokens import create_access_token,create_refresh_token
 from database import SessionLocal
 from auth.auth import hash,verify
 from models.user_model import RefreshToken, User
+from models.cart_model import Cart
 from schema.schema import CreateUser
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,Request
@@ -130,3 +131,26 @@ def get_current_user(db:Session,request:Request):
     except JWTError:
     
             raise credential_error
+    
+
+def get_all_users(request:Request,db:Session):
+    users=db.query(User).all()
+
+    return users
+
+
+
+## get user cart
+def get_user_cart(request:Request,user:User,db:Session):
+    """ used for retriving the user cart"""
+   
+    
+    cart=db.query(Cart).filter(Cart.user_id==user.id).first()
+    if not cart:
+        cart=Cart(
+            user_id=user.id
+        )
+        db.add(cart)
+        db.commit()
+        db.refresh(cart)
+    return cart
