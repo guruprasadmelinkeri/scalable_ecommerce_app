@@ -6,7 +6,7 @@ from auth.auth import hash,verify
 from models.product_model import Product
 from models.user_model import RefreshToken, User
 from models.cart_model import Cart, CartItem
-from schema.schema import CartItemCreate, CreateUser
+from schema.schema import CartItemCreate, CartItemDelete, CartItemUpdate, CreateUser
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,Request
 from datetime import datetime,timedelta
@@ -158,12 +158,22 @@ def get_user_cart(request:Request,user:User,db:Session):
 ## add cartitems to cart
 
 def add_cartitems(request:Request,user:User,product:CartItemCreate,db:Session):
+    """ method used for adding new items or increasing quantity of items"""
+
     cart=get_user_cart(request,user,db)
     new_product=db.query(Product).filter(Product.id==product.product_id).first()
+    
+    if(product.quantity<0):
+        raise HTTPException(status_code=400,detail="Enter positive quantity")
     
     if ( not new_product):
         raise HTTPException(status_code=400,detail="Product not found")
     
+    if (product.quantity>new_product.stock):
+        raise HTTPException(status_code=400,detail="Items out of stock")
+    
+
+
     cart_item=db.query(CartItem).filter(CartItem.cart_id==cart.id,
                                        CartItem.product_id==new_product.id).first()
     
@@ -174,19 +184,90 @@ def add_cartitems(request:Request,user:User,product:CartItemCreate,db:Session):
             quantity=product.quantity,
             price_at_addition=new_product.price,
         )
+        db.add(cart)
+        db.add(cart_item)
+        db.commit()
+        db.refresh(cart_item)
+        db.refresh(cart)
+        return cart.items
+        
 
-    quantity=cart_item.quantity
-    delta=product.quantity
-    quantity+=delta
-    cart_item.quantity=quantity
+    
+    
+    cart_item.quantity+=product.quantity
     cart_item.price_at_addition=new_product.price
 
+   
+    
+    db.add(cart)
     db.add(cart_item)
     db.commit()
     db.refresh(cart_item)
-
-    db.add(cart)
-    db.commit()
     db.refresh(cart)
     return cart.items
     
+def modify_cartitems(request:Request,user:User,update:CartItemUpdate,db:Session):
+    """ used for updating cartitem qauntity"""
+    cart=get_user_cart(request,user,db)
+    cart_item=db.query(CartItem).filter(CartItem.cart_id==cart.id,
+                                        CartItem.product_id==update.product_id).first()
+    product=db.query(Product).filter(Product.id==update.product_id).first()
+    
+    if not cart_item:
+        raise HTTPException(status_code=400,detail="Product not found")
+    
+    if(update.quantity<0):
+        raise HTTPException(status_code=400,detail="Enter positive quantity")
+    
+    if ( not product):
+        raise HTTPException(status_code=400,detail="Product not found")
+    
+    if (update.quantity>product.stock):
+        raise HTTPException(status_code=400,detail="Items out of stock")
+    
+    
+    if (update.quantity==0):
+        cart_item.quantity=update.quantity
+        db.delete(cart_item)
+        db.add(cart)
+        db.commit()
+        db.refresh(cart)
+        return cart.total_cost()
+    
+    cart_item.quantity=update.quantity
+
+    
+    db.commit()
+    db.refresh(cart)
+    
+
+    return cart.total_cost()
+    
+
+
+def delete_cart_item(request:Request,user:User,update:CartItemDelete,db:Session):
+    cart=get_user_cart(request,user,db)
+    product=db.query(Product).filter(Product.id==update.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404,detail="product not found")
+    
+    cart_item=db.query(CartItem).filter(CartItem.product_id==update.product_id,
+                                        CartItem.cart_id==cart.id).first()
+    
+    if not cart_item:
+        
+        raise HTTPException(status_code=404,detail="product not found in cart")
+    
+    db.delete(cart_item)
+    db.commit()
+    
+    return {"cart_total":cart.total_cost()}
+
+def clear_cart(request:Request,user:User,db:Session):
+    cart=get_user_cart(request,user,db)
+    items=db.query(CartItem).filter(CartItem.cart_id==cart.id).all()
+    for item in items:
+        db.delete(item)
+        db.commit()
+    
+    return cart.total_cost()

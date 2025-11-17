@@ -62,6 +62,8 @@ class CartItemBase(BaseModel):
 
 class CartItemCreate(CartItemBase):
     pass
+class CartItemDelete(BaseModel):
+    product_id:int
 
 class CartItemRead(CartItemBase):
     id:int
