@@ -3,6 +3,7 @@ from requests import session
 from auth.create_tokens import create_access_token,create_refresh_token
 from database import SessionLocal
 from auth.auth import hash,verify
+from models.order_model import Order, OrderItem
 from models.product_model import Product
 from models.user_model import RefreshToken, User
 from models.cart_model import Cart, CartItem
@@ -271,3 +272,67 @@ def clear_cart(request:Request,user:User,db:Session):
         db.commit()
     
     return cart.total_cost()
+
+
+
+
+###cart checkout and order methods 
+
+def complete_order(request:Request,user:User,db:Session):
+    cart=get_user_cart(request,user,db)
+    
+    cart_items=db.query(CartItem).filter(CartItem.cart_id==cart.id).all()
+
+    if not cart_items or (cart.total_cost() == 0):
+        raise HTTPException(status_code=400,detail="cart is empty cant proceed ")
+    for item in cart_items:
+        curr_product=db.query(Product).filter(Product.id==item.product_id).first()
+        if(item.quantity>curr_product.stock):
+            raise HTTPException(status_code=400,detail=f"only {curr_product.stock} items of {curr_product.name} left ")
+        
+    
+    try:
+        order=Order(
+
+            user_id=user.id,
+                )
+        db.add(order)
+        db.flush()
+        total=0
+
+        for item in cart_items:
+            curr_product=db.query(Product).filter(Product.id==item.product_id).first()
+            order_item=OrderItem(
+                order_id=order.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                price_at_purchase=curr_product.price
+            )
+
+            db.add(order_item)
+            if(item.quantity>curr_product.stock):
+                raise HTTPException(status_code=400,detail=f"only {curr_product.stock} items of {curr_product.name} left ")
+            curr_product.stock-=item.quantity
+            
+            db.add(curr_product)
+            total+=order_item.subtotal()
+
+        order.total_amount=total
+        cart_total=clear_cart(request,user,db)
+        order.is_completed=True
+        db.add(order)
+        db.add(cart)
+        db.commit()
+        db.refresh(cart)
+
+        return {"items":order.items,"total":order.total_amount,"status":order.is_completed}
+    
+
+        
+
+
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Order creation failed: {str(e)}")
+

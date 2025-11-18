@@ -12,6 +12,8 @@ class User(Base):
     current_token=Column(String,nullable=True)
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete")
     cart = relationship("Cart", back_populates="user",uselist=False)
+    orders = relationship("Order", back_populates="user")
+
 class RefreshToken(Base):
     __tablename__="refresh_tokens"
     id=Column(Integer,primary_key=True,index=True)
