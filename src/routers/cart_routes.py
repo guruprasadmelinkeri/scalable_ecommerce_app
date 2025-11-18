@@ -1,11 +1,12 @@
 from fastapi import FastAPI,Depends,APIRouter, HTTPException,Request
 from requests import Session
 from database import SessionLocal,get_db
-from utils.helper_functions import add_cartitems, clear_cart, complete_order, create_user, delete_cart_item,login_user, modify_cartitems
+from utils.helper_functions import add_cartitems, clear_cart, complete_order, create_user, delete_cart_item,login_user, modify_cartitems, order_cancel
 from schema.schema import CartItemCreate, CartItemDelete, CartItemUpdate, CreateUser,CategoryBase,CategoryUpdate,ProductCreate,ProductUpdate
 from utils.helper_functions import get_current_user,get_user_cart
 from models.cart_model import Cart
 from models.user_model import User
+
 router =APIRouter()
 
 
@@ -39,3 +40,10 @@ def checkout(request:Request,db:Session=Depends(get_db)):
     user=get_current_user(db,request)
     
     return complete_order(request,user,db)
+
+@router.put("/order/{order_id}/cancel")
+def cancel_order(request:Request,order_id:int,db:Session=Depends(get_db)):
+
+    user=get_current_user(db,request)
+    
+    return order_cancel(request,user,order_id,db)

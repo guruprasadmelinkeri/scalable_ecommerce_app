@@ -1,3 +1,4 @@
+from ast import Or
 import datetime
 from requests import session
 from auth.create_tokens import create_access_token,create_refresh_token
@@ -336,3 +337,35 @@ def complete_order(request:Request,user:User,db:Session):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Order creation failed: {str(e)}")
 
+def get_order_history(request:Request,user:User,db:Session):
+    orders=db.query(Order).filter(Order.user_id==user.id).all()
+    
+
+    if not orders:
+        raise HTTPException(status_code=404,detail="no orders to display")
+    
+    return {"order":order for order in  orders}
+
+
+
+def order_cancel(request:Request,user:User,order_id:int,db:Session):
+    order=db.query(Order).filter(Order.id==order_id).first()
+    if not order:
+        raise HTTPException(status_code=400,detail="Order not found")
+    
+    if order.is_cancelled or (not order.is_completed):
+        raise HTTPException(status_code=400,detail="cant cancel order")
+    try:
+        items=db.query(OrderItem).filter(OrderItem.order_id==order_id).all()
+        for item in items:
+            product=db.query(Product).filter(Product.id==item.product_id).first()
+            product.stock+=item.quantity
+            db.add(product)
+            
+        order.is_cancelled=True
+        db.commit()
+        return order.items
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Order creation failed: {str(e)}")
