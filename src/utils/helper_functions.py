@@ -8,7 +8,7 @@ from models.order_model import Order, OrderItem
 from models.product_model import Product
 from models.user_model import RefreshToken, User
 from models.cart_model import Cart, CartItem
-from schema.schema import CartItemCreate, CartItemDelete, CartItemUpdate, CreateUser
+from schema.schema import CartItemCreate, CartItemDelete, CartItemUpdate, CreateUser, DeliveryRequest, PaymentRequest, ShippingRequest
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,Request
 from datetime import datetime,timedelta
@@ -320,7 +320,7 @@ def complete_order(request:Request,user:User,db:Session):
 
         order.total_amount=total
         cart_total=clear_cart(request,user,db)
-        order.is_completed=True
+        
         db.add(order)
         db.add(cart)
         db.commit()
@@ -344,7 +344,7 @@ def get_order_history(request:Request,user:User,db:Session):
     if not orders:
         raise HTTPException(status_code=404,detail="no orders to display")
     
-    return {"order":order for order in  orders}
+    return orders
 
 
 
@@ -353,7 +353,7 @@ def order_cancel(request:Request,user:User,order_id:int,db:Session):
     if not order:
         raise HTTPException(status_code=400,detail="Order not found")
     
-    if order.is_cancelled or (not order.is_completed):
+    if order.is_cancelled or (order.is_completed) or order.is_shipped :
         raise HTTPException(status_code=400,detail="cant cancel order")
     try:
         items=db.query(OrderItem).filter(OrderItem.order_id==order_id).all()
@@ -369,3 +369,61 @@ def order_cancel(request:Request,user:User,order_id:int,db:Session):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Order creation failed: {str(e)}")
+    
+
+
+
+    ##payment shipping and delivcery methods
+
+def complete_payment(request:Request,user:User,payload:PaymentRequest,db:Session):
+    order=db.query(Order).filter(Order.user_id==user.id,
+                                 Order.id==payload.order_id).first()
+    
+    if not order:
+        raise HTTPException(status_code=400,detail="order not found please check credentials")
+    if order.is_cancelled or order.is_completed or order.is_paid or order.is_shipped:
+        raise HTTPException(status_code=400,detail="cant process payment")
+    
+    order.is_paid=True
+    order.payment_at=datetime.now()
+    order.payment_method=payload.payment_method
+
+    db.add(order)
+    db.commit()
+
+    return {"order_id":order.id,"status":"paid"}
+
+def start_shipping(request:Request,user:User,payload:ShippingRequest,db:Session):
+    order=db.query(Order).filter(Order.user_id==user.id,
+                                 Order.id==payload.order_id).first()
+    if not order:
+        raise HTTPException(status_code=400,detail="order not found please check credentials")
+    if order.is_cancelled or order.is_completed or (not order.is_paid) or order.is_shipped or order.delivered:
+        raise HTTPException(status_code=400,detail="cant process shipping")
+    order.is_shipped=True
+    order.shipped_at=datetime.now()
+
+    db.add(order)
+    db.commit()
+
+    
+    return {"order_id":order.id,"status":"shipped","shipping_method":payload.shipping_method}
+
+def complete_delivery(request:Request,user:User,payload:DeliveryRequest,db:Session):
+    order=db.query(Order).filter(Order.user_id==user.id,
+                                Order.id==payload.order_id).first()
+    if not order:
+        raise HTTPException(status_code=400,detail="order not found please check credentials")
+    
+    if order.is_cancelled or order.is_completed or (not order.is_paid) or (not order.is_shipped) or order.delivered:
+        raise HTTPException(status_code=400,detail="cant process delivery")
+    
+    order.delivered=True
+    order.delivered_at=datetime.now()
+    order.is_completed=True
+    order.completed_at=datetime.now()
+
+    db.add(order)
+    db.commit()
+
+    return {"order_id":order.id,"status":"deliverd","delivery_method":payload.delivery_method}

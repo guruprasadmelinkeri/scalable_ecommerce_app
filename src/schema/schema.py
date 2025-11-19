@@ -92,6 +92,20 @@ class CartRead(BaseModel):
         orm_mode = True
 
 
+##payment shipping and delivery schema 
+
+class PaymentRequest(BaseModel):
+    order_id:int
+    payment_method:Optional[str]=None
+
+class ShippingRequest(BaseModel):
+    order_id:int
+    shipping_method:Optional[str]=None
+
+class DeliveryRequest(BaseModel):
+    order_id:int
+    delivery_method:Optional[str]=None
+
 
 
 
