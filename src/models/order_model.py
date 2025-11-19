@@ -12,10 +12,25 @@ class Order(Base):
     total_amount=Column(Float,default=0)
     is_completed=Column(Boolean,default=False)
     is_cancelled=Column(Boolean,default=False)
+    completed_at=Column(DateTime,nullable=True)
+    cancelled_at=Column(DateTime,nullable=True)
+
     created_at=Column(DateTime(timezone=True),server_default=func.now())
     updated_at=Column(DateTime(timezone=True),onupdate=func.now())
+    is_paid = Column(Boolean, default=False)
+    payment_method=Column(String,nullable=True)
+    payment_at=Column(DateTime,nullable=True)
+
+    is_shipped = Column(Boolean, default=False)
+    shipped_at = Column(DateTime, nullable=True)
+    delivered = Column(Boolean, default=False)
+    delivered_at = Column(DateTime, nullable=True)
+
+
 
     user = relationship("User", back_populates="orders")
+
+
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
     

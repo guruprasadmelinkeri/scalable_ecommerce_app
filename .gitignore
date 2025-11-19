@@ -17,5 +17,18 @@ venv/
 *.log
 src/test.db
 src/*.db
-# Alembic migrations cache
-migrations/
+# ---- ALEMBIC ----
+alembic/__pycache__/
+alembic/versions/__pycache__/
+alembic/versions/*.pyc
+
+
+alembic/.cache/
+**/alembic/.cache/
+**/alembic/*cache*
+
+
+src/alembic/__pycache__/
+src/alembic/versions/__pycache__/
+src/alembic/versions/*.pyc
+src/alembic/.cache/
