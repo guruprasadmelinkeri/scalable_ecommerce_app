@@ -36,10 +36,10 @@ def cart_item(request:Request,db:Session=Depends(get_db)):
     return clear_cart(request,user,db)
 
 @router.put("/cart/checkout")
-def checkout(request:Request,db:Session=Depends(get_db)):
+def checkout(request:Request,method:str,db:Session=Depends(get_db)):
     user=get_current_user(db,request)
     
-    return complete_order(request,user,db)
+    return complete_order(request,method,user,db)
 
 @router.put("/order/{order_id}/cancel")
 def cancel_order(request:Request,order_id:int,db:Session=Depends(get_db)):

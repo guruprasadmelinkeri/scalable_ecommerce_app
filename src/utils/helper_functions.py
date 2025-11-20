@@ -16,6 +16,9 @@ from datetime import datetime,timedelta
 from auth.create_tokens import ALGORITHM,SECRET_KEY,jwt
 from jose import JWTError,jwt
 
+Shipping_Delay=12
+
+
 def create_user(user:CreateUser,db=Session):
     """funtion used for creating a user """
     new_user=db.query(User).filter(User.email==user.email or User.username==user.username).first()
@@ -282,7 +285,7 @@ def clear_cart(request:Request,user:User,db:Session):
 
 
 
-def complete_order(request:Request,user:User,db:Session):
+def complete_order(request:Request,method:str,user:User,db:Session):
     cart=get_user_cart(request,user,db)
     
     cart_items=db.query(CartItem).filter(CartItem.cart_id==cart.id).all()
@@ -323,7 +326,8 @@ def complete_order(request:Request,user:User,db:Session):
 
         order.total_amount=total
         cart_total=clear_cart(request,user,db)
-        
+        order.checkout_time=datetime.utcnow()
+        order.shipping_provider=method
         db.add(order)
         db.add(cart)
         db.commit()
@@ -461,3 +465,8 @@ def complete_delivery(request:Request,user:User,payload:DeliveryRequest,db:Sessi
     db.commit()
 
     return {"order_id":order.id,"status":"deliverd","delivery_method":payload.delivery_method}
+
+
+
+##schedulwer task for autoshipping
+

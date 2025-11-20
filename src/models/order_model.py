@@ -14,6 +14,7 @@ class Order(Base):
     is_cancelled=Column(Boolean,default=False)
     completed_at=Column(DateTime,nullable=True)
     cancelled_at=Column(DateTime,nullable=True)
+    checkout_time=Column(DateTime,nullable=True)
 
     created_at=Column(DateTime(timezone=True),server_default=func.now())
     updated_at=Column(DateTime(timezone=True),onupdate=func.now())

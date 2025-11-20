@@ -9,7 +9,8 @@ from routers.logistics_routes import router as logistics_router
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 import os
-
+from scheduler.scheduler import scheduler
+from scheduler.jobs import set_to_ship
 
 
 app=FastAPI()
@@ -25,7 +26,13 @@ app.add_middleware(SessionMiddleware,
     https_only=True,
     )
 
+@app.on_event("startup")
+async def start_scheduler():
+    scheduler.add_job(set_to_ship, "interval", minutes=60)
+    scheduler.start()
+
 Base.metadata.create_all(bind=engine)
 @app.get("/")
 def root():
     return {"the api is running "}
+
