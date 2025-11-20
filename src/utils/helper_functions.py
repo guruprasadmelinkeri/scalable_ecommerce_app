@@ -1,4 +1,4 @@
-from ast import Or
+import string,random
 import datetime
 from requests import session
 from auth.create_tokens import create_access_token,create_refresh_token
@@ -279,6 +279,9 @@ def clear_cart(request:Request,user:User,db:Session):
 
 ###cart checkout and order methods 
 
+
+
+
 def complete_order(request:Request,user:User,db:Session):
     cart=get_user_cart(request,user,db)
     
@@ -326,7 +329,7 @@ def complete_order(request:Request,user:User,db:Session):
         db.commit()
         db.refresh(cart)
 
-        return {"items":order.items,"total":order.total_amount,"status":order.is_completed}
+        return {"order_id":order.id,"items":order.items,"total":order.total_amount,"status":order.is_completed}
     
 
         
@@ -383,7 +386,8 @@ def complete_payment(request:Request,user:User,payload:PaymentRequest,db:Session
         raise HTTPException(status_code=400,detail="order not found please check credentials")
     if order.is_cancelled or order.is_completed or order.is_paid or order.is_shipped:
         raise HTTPException(status_code=400,detail="cant process payment")
-    
+    order_amoont=order.total_amount
+
     order.is_paid=True
     order.payment_at=datetime.now()
     order.payment_method=payload.payment_method
@@ -393,21 +397,51 @@ def complete_payment(request:Request,user:User,payload:PaymentRequest,db:Session
 
     return {"order_id":order.id,"status":"paid"}
 
+def generate_tracking_id():
+    rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    return f"SHIP-{rand}"
+
+
+
+###
+shipping_methods={
+    "Express":2,
+    "Fast":5,
+    "Standard":10
+}
+
+
+def get_delivery_time(method:string):
+    '''for no of delivery days'''
+    if not method in shipping_methods:
+        raise HTTPException(status_code=400,detail="not valid order provider")
+    return shipping_methods[method]
+
 def start_shipping(request:Request,user:User,payload:ShippingRequest,db:Session):
+
     order=db.query(Order).filter(Order.user_id==user.id,
                                  Order.id==payload.order_id).first()
     if not order:
         raise HTTPException(status_code=400,detail="order not found please check credentials")
     if order.is_cancelled or order.is_completed or (not order.is_paid) or order.is_shipped or order.delivered:
         raise HTTPException(status_code=400,detail="cant process shipping")
+    
     order.is_shipped=True
+
+    delta=get_delivery_time(payload.shipping_method)
+
+    order.estimated_delivery_date=datetime.utcnow()+timedelta(days=delta)
+    order.tracking_id=generate_tracking_id()
     order.shipped_at=datetime.now()
 
     db.add(order)
     db.commit()
 
     
-    return {"order_id":order.id,"status":"shipped","shipping_method":payload.shipping_method}
+    return {"order_id":order.id,"status":"shipped","shipping_method":payload.shipping_method ,"estimated delivery date":order.estimated_delivery_date}
+
+
+
 
 def complete_delivery(request:Request,user:User,payload:DeliveryRequest,db:Session):
     order=db.query(Order).filter(Order.user_id==user.id,

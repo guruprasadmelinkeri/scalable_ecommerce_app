@@ -100,7 +100,7 @@ class PaymentRequest(BaseModel):
 
 class ShippingRequest(BaseModel):
     order_id:int
-    shipping_method:Optional[str]=None
+    shipping_method:Optional[str]="Standard"
 
 class DeliveryRequest(BaseModel):
     order_id:int

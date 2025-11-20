@@ -20,12 +20,17 @@ class Order(Base):
     is_paid = Column(Boolean, default=False)
     payment_method=Column(String,nullable=True)
     payment_at=Column(DateTime,nullable=True)
+    payment_amount=Column(Float,nullable=True)
+    
 
     is_shipped = Column(Boolean, default=False)
     shipped_at = Column(DateTime, nullable=True)
     delivered = Column(Boolean, default=False)
     delivered_at = Column(DateTime, nullable=True)
-
+    shipping_provider=Column(String,nullable=True)
+    tracking_id=Column(String,nullable=True)
+    shipping_method=Column(String,nullable=True)
+    estimated_delivery_date=Column(DateTime,nullable=True)
 
 
     user = relationship("User", back_populates="orders")
