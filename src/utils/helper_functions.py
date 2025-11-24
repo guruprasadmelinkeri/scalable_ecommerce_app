@@ -382,8 +382,8 @@ def order_cancel(request:Request,user:User,order_id:int,db:Session):
 
     ##payment shipping and delivcery methods
 
-def complete_payment(request:Request,user:User,payload:PaymentRequest,db:Session):
-    order=db.query(Order).filter(Order.user_id==user.id,
+def complete_payment(request:Request,payload:PaymentRequest,db:Session):
+    order=db.query(Order).filter(Order.user_id==payload.user_id,
                                  Order.id==payload.order_id).first()
     
     if not order:
@@ -421,9 +421,9 @@ def get_delivery_time(method:string):
         raise HTTPException(status_code=400,detail="not valid order provider")
     return shipping_methods[method]
 
-def start_shipping(request:Request,user:User,payload:ShippingRequest,db:Session):
+def start_shipping(request:Request,payload:ShippingRequest,db:Session):
 
-    order=db.query(Order).filter(Order.user_id==user.id,
+    order=db.query(Order).filter(Order.user_id==payload.user_id,
                                  Order.id==payload.order_id).first()
     if not order:
         raise HTTPException(status_code=400,detail="order not found please check credentials")
@@ -447,8 +447,8 @@ def start_shipping(request:Request,user:User,payload:ShippingRequest,db:Session)
 
 
 
-def complete_delivery(request:Request,user:User,payload:DeliveryRequest,db:Session):
-    order=db.query(Order).filter(Order.user_id==user.id,
+def complete_delivery(request:Request,payload:DeliveryRequest,db:Session):
+    order=db.query(Order).filter(Order.user_id==payload.user_id,
                                 Order.id==payload.order_id).first()
     if not order:
         raise HTTPException(status_code=400,detail="order not found please check credentials")

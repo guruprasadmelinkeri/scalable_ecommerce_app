@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
+
 databse_url="sqlite:///./test.db"
 
 Base=declarative_base()
@@ -19,4 +20,3 @@ def get_db():
     finally:
         db.close()
 
-        

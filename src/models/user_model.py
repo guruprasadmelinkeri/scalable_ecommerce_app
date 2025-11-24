@@ -13,6 +13,7 @@ class User(Base):
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete")
     cart = relationship("Cart", back_populates="user",uselist=False)
     orders = relationship("Order", back_populates="user")
+    role=Column(String,default="user")
 
 class RefreshToken(Base):
     __tablename__="refresh_tokens"

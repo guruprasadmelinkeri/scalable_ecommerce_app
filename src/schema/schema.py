@@ -96,14 +96,17 @@ class CartRead(BaseModel):
 
 class PaymentRequest(BaseModel):
     order_id:int
+    user_id:int
     payment_method:Optional[str]=None
 
 class ShippingRequest(BaseModel):
     order_id:int
+    user_id:int
     shipping_method:Optional[str]="Standard"
 
 class DeliveryRequest(BaseModel):
     order_id:int
+    user_id:int
     delivery_method:Optional[str]=None
 
 

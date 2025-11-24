@@ -1,6 +1,7 @@
 from fastapi import FastAPI,Request
 from requests import session
 from auth.create_tokens import SECRET_KEY
+from auth.rbac import create_admin
 from database import Base,engine
 from routers.user_routes import router as user_router
 from routers.product_routes import router as product_router
@@ -11,7 +12,7 @@ from dotenv import load_dotenv
 import os
 from scheduler.scheduler import scheduler
 from scheduler.jobs import set_to_ship
-
+from database import SessionLocal
 
 app=FastAPI()
 app.include_router(user_router)
@@ -36,3 +37,7 @@ Base.metadata.create_all(bind=engine)
 def root():
     return {"the api is running "}
 
+
+
+## execute only onnce for each admin 
+##create_admin(username="username",email="email",password="password")
